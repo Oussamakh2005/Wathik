@@ -12,10 +12,33 @@ const SAMPLE_STRUCTURED = {
   total: 415,
 };
 
+// Canonical end-to-end example: this is the actual response the API returned
+// for the sample CREATIVE MEDIA invoice. Save-body examples below are paired
+// with this exact response so mobile sees the full process → save round-trip.
 const SAMPLE_PROCESS_RESPONSE = {
   status: 'ok',
   msg: 'Invoice processed successfully',
-  rawOCR: 'INVOICE\nINVOICE # 24856 DATE: 01 / 02 / 2020\nBill to: CREATIVE MEDIA\n...',
+  rawOCR:
+    'INVOICE\t\r\n' +
+    'INVOICE # 24856\tDATE: 01 / 02 / 2020\t\r\n' +
+    'Bill to:\tCREATIVE MEDIA\t\r\n' +
+    'YOUR COMPANY TAC LINE HERE\t\r\n' +
+    'Dwyane Clark\t\r\n' +
+    'Company Address,\t\r\n' +
+    '24 Dummy Street Area,\t\r\n' +
+    'Location, Lorem Ipsum,\tLorem, Ipsum Dolor,\t\r\n' +
+    '570xx59x\t\r\n' +
+    'QTY\tPRODUCT DESCRIPTION\tPRICE\tTOTAL\t\r\n' +
+    '5\tLorem Ipsum Dolor\t$50.00\t$250.00\t\r\n' +
+    'Pellentesque id neque ligula\t$10.00\t$10.00\t\r\n' +
+    '3\tInterdum et malesuada fames\t$25.00\t$75.00\t\r\n' +
+    '2\tVivamus volutpat faucibus\t$40.00\t$80.00\t\r\n' +
+    'Subtotal\t$415.00\t\r\n' +
+    'Tax Rate\t0.00%\t\r\n' +
+    'THANK YOU FOR YOUR BUSINESS\tTOTAL\t$415.00\t\r\n' +
+    'Payment is due max 7 days after invoice without deduction.\t\r\n' +
+    'Phasellus sollicitudin justo et quam aliquam sollicitudin.\t\r\n' +
+    'Signature\t\r\n',
   structured: SAMPLE_STRUCTURED,
   customerMatch: {
     status: 'matched',
@@ -141,13 +164,59 @@ export const saveRoute = createRoute({
   description: [
     'Persist a confirmed structured invoice to the database.',
     '',
-    'Mobile flow: take the response from `POST /api/invoice` and build the body as follows:',
+    '## End-to-end JSON example: process response → save body',
     '',
-    '- **User picked the matched customer** → copy `customerId` from `customerMatch.customerId`. Set `updateCustomer: false` (or omit) unless the user edited the name.',
-    '- **User wants a brand-new customer** → omit `customerId`. Send the desired `customerName`. Backend will re-match on the name; if it matches one row it links, otherwise it creates a new customer and links.',
-    '- **User edited the matched customer\'s name** → pass `customerId` AND `updateCustomer: true` AND the new `customerName`.',
+    '### 1. What `POST /api/invoice` returned (input you start from):',
     '',
-    'Note: `dueDate` must be a valid ISO-8601 datetime or omitted entirely. Empty string fails validation.',
+    '```json',
+    JSON.stringify(SAMPLE_PROCESS_RESPONSE, null, 2),
+    '```',
+    '',
+    '### 2. What you send to `POST /api/invoice/save` — pick ONE of these depending on what the user chose:',
+    '',
+    '#### A. User accepts the matched customer (most common)',
+    '',
+    '```json',
+    JSON.stringify({
+      ...SAMPLE_STRUCTURED,
+      customerId: SAMPLE_PROCESS_RESPONSE.customerMatch.customerId,
+      updateCustomer: false,
+    }, null, 2),
+    '```',
+    '',
+    '#### B. User edited the matched customer\'s name (rename + link)',
+    '',
+    '```json',
+    JSON.stringify({
+      ...SAMPLE_STRUCTURED,
+      customerName: 'Creative Media LLC',
+      customerId: SAMPLE_PROCESS_RESPONSE.customerMatch.customerId,
+      updateCustomer: true,
+    }, null, 2),
+    '```',
+    '',
+    '#### C. Create a brand-new customer (no `customerId` — distinct name forces creation)',
+    '',
+    '```json',
+    JSON.stringify({
+      ...SAMPLE_STRUCTURED,
+      customerName: 'CREATIVE MEDIA (Branch B)',
+    }, null, 2),
+    '```',
+    '',
+    '## Mapping rules',
+    '',
+    '| Process response shape | Save body fields to add |',
+    '|---|---|',
+    '| `customerMatch.status === "matched"` AND user accepts | `customerId` = `customerMatch.customerId`, `updateCustomer: false` |',
+    '| `customerMatch.status === "matched"` AND user renamed | `customerId` = `customerMatch.customerId`, `updateCustomer: true`, new `customerName` |',
+    '| `customerMatch.status === "none"` | omit `customerId`; backend creates customer from `customerName` |',
+    '| `customerMatch.status === "multiple"` | UI must let user pick from `customerMatch.candidates`; send picked `id` as `customerId` |',
+    '',
+    '**Gotchas:**',
+    '- All `structured.*` fields (`customerName`, `items`, `total`, `dueDate?`) copy verbatim into the save body.',
+    '- `dueDate` must be a valid ISO-8601 datetime or omitted entirely. Empty string `""` fails validation.',
+    '- Sending `customerName` that exactly matches an existing customer (case-insensitive) without a `customerId` will RE-LINK to that customer, not create a duplicate. Use a distinct name to force creation.',
   ].join('\n'),
   request: {
     body: {
@@ -157,29 +226,41 @@ export const saveRoute = createRoute({
           schema: SaveBodySchema,
           examples: {
             linkToMatchedCustomer: {
-              summary: 'User picked the customer that matched (customerMatch.status === "matched")',
-              description: 'Pass `customerId` from the process response. Backend links the new invoice to that customer without renaming.',
+              summary: 'Link to the matched customer (paired with process example "matchedCustomer")',
+              description: [
+                'Use this when `customerMatch.status === "matched"` in the process response and the user accepts the match.',
+                'Copy `structured.*` fields verbatim. Set `customerId` to `customerMatch.customerId` from the process response (1 in the example).',
+                '`updateCustomer: false` ensures the existing customer row keeps its name.',
+              ].join(' '),
               value: {
                 ...SAMPLE_STRUCTURED,
-                customerId: 1,
+                customerId: SAMPLE_PROCESS_RESPONSE.customerMatch.customerId,
                 updateCustomer: false,
               },
             },
             createNewCustomerDistinctName: {
-              summary: 'Create a brand-new customer (different name)',
-              description: 'Omit `customerId`. Use a name that does not collide with any existing customer; backend creates the customer and links the invoice.',
+              summary: 'Create a brand-new customer (paired with process example "noCustomerMatch", or override match)',
+              description: [
+                'Use this when `customerMatch.status === "none"`, OR when the user wants to ignore a match and create a fresh customer.',
+                'Omit `customerId`. Backend re-matches by `customerName`; if no row matches it creates one.',
+                'Note: passing the same name as an existing customer would re-link, not create. Use a distinct name to force creation.',
+              ].join(' '),
               value: {
                 ...SAMPLE_STRUCTURED,
                 customerName: 'CREATIVE MEDIA (Branch B)',
               },
             },
             renameMatchedCustomer: {
-              summary: 'User edited the matched customer\'s name',
-              description: 'Pass `customerId` AND `updateCustomer: true`. The customer row is renamed before the invoice is linked.',
+              summary: 'Rename the matched customer (paired with process example "matchedCustomer")',
+              description: [
+                'Use this when `customerMatch.status === "matched"` and the user edited the customer name in the UI.',
+                'Pass `customerId` from the match AND `updateCustomer: true` AND the new `customerName`.',
+                'Backend renames the customer row before linking the invoice.',
+              ].join(' '),
               value: {
                 ...SAMPLE_STRUCTURED,
                 customerName: 'Creative Media LLC',
-                customerId: 1,
+                customerId: SAMPLE_PROCESS_RESPONSE.customerMatch.customerId,
                 updateCustomer: true,
               },
             },
