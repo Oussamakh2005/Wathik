@@ -1,5 +1,7 @@
 import { Context } from "hono";
 import { ocrSpace } from "ocr-space-api-wrapper";
+import { createGeminiService } from "../services/llm.service";
+
 export const getInvoiceImage = async (c: Context) => {
     const body = await c.req.parseBody();
     const file = body['file'];
@@ -7,22 +9,52 @@ export const getInvoiceImage = async (c: Context) => {
     if (!(file instanceof File)) {
         return c.json({ msg: 'No file uploaded' }, 400);
     }
-    console.log(`name : ${file.name} , size : ${file.size} , type : ${file.type}`);
-    const arrayBuffer = await file.arrayBuffer()
-    const base64String = Buffer.from(arrayBuffer).toString('base64')
-    const mimeType = file.type
-    // Create a Data URL (optional)
-    const dataUrl = `data:${mimeType};base64,${base64String}`
-    //OCR
+
+    console.log(`Processing invoice: name=${file.name}, size=${file.size}, type=${file.type}`);
+
     try {
-        const respose = await ocrSpace(dataUrl, { apiKey: process.env.OCR_API_KEY , isTable : true});
+        // Step 1: OCR - Extract text from image
+        const arrayBuffer = await file.arrayBuffer();
+        const base64String = Buffer.from(arrayBuffer).toString('base64');
+        const dataUrl = `data:${file.type};base64,${base64String}`;
+
+        const ocrResponse = await ocrSpace(dataUrl, {
+            apiKey: process.env.OCR_API_KEY,
+            isTable: true,
+        });
+
+        const ocrText = ocrResponse.ParsedResults?.[0]?.ParsedText;
+        if (!ocrText) {
+            return c.json({ msg: 'Failed to extract text from image' }, 400);
+        }
+
+        console.log(`OCR extracted ${ocrText.length} characters`);
+
+        const ocrOnlyParam = (c.req.query('ocrOnly') || '').toLowerCase();
+        const ocrOnly = ocrOnlyParam === '1' || ocrOnlyParam === 'true' || ocrOnlyParam === 'yes';
+        if (ocrOnly) {
+            return c.json({
+                msg: "OCR extracted successfully",
+                rawOCR: ocrText,
+            }, 200);
+        }
+
+        // Step 2: LLM - Structure OCR text into invoice data
+        const llmService = createGeminiService();
+        const structuredInvoice = await llmService.structureInvoiceText(ocrText);
+
         return c.json({
-            msg: "Text extracted successfully",
-            data : respose.ParsedResults[0].ParsedText
-        }, 500);
+            msg: "Invoice processed successfully",
+            rawOCR: ocrText,
+            structured: structuredInvoice,
+        }, 200);
+
     } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        console.error('Invoice processing error:', errorMessage);
         return c.json({
-            msg: "Something went wrong"
+            msg: "Invoice processing failed",
+            error: errorMessage,
         }, 500);
     }
 }
