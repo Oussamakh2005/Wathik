@@ -15,7 +15,7 @@ export const getInvoiceImage = async (c: Context) => {
     const dataUrl = `data:${mimeType};base64,${base64String}`
     //OCR
     try {
-        const respose = await ocrSpace(dataUrl, { apiKey: process.env.OCR_API_KEY });
+        const respose = await ocrSpace(dataUrl, { apiKey: process.env.OCR_API_KEY , isTable : true});
         return c.json({
             msg: "Text extracted successfully",
             data : respose.ParsedResults[0].ParsedText
