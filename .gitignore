@@ -1,0 +1,9 @@
+# deps
+node_modules/
+.env
+docker-compose.yml
+pgdata
+.qodo
+
+
+/generated/prisma
