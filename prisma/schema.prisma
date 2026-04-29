@@ -23,6 +23,7 @@ model Customer {
   name      String
   score     Int            @default(0)
   notes     NoteCustomer[]
+  invoices  Invoice[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 }
@@ -39,14 +40,16 @@ model Item {
 }
 
 model Invoice {
-  id        Int           @id @default(autoincrement())
-  items     Item[]
-  total     Decimal       @db.Decimal(12, 2)
-  status    InvoiceStatus
-  due_date  DateTime      @db.Date
-  notes     NoteInvoice[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id          Int           @id @default(autoincrement())
+  items       Item[]
+  total       Decimal       @db.Decimal(12, 2)
+  status      InvoiceStatus
+  due_date    DateTime      @db.Date
+  notes       NoteInvoice[]
+  customer_id Int
+  customer    Customer      @relation(fields: [customer_id], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model NoteCustomer {

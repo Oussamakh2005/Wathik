@@ -1,13 +1,11 @@
-import { Hono } from "hono";
-import { getInvoiceImage } from "../controllers/invoice.controller";
-import { saveInvoice } from "../controllers/invoice.save.controller";
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { getInvoiceImage } from '../controllers/invoice.controller';
+import { saveInvoice } from '../controllers/invoice.save.controller';
+import { processRoute, saveRoute } from '../docs/openapi.routes';
 
-const invoiceRouter = new Hono().basePath('/invoice');
+const invoiceRouter = new OpenAPIHono().basePath('/invoice');
 
-// Process invoice image (OCR + LLM structuring)
-invoiceRouter.post('/', getInvoiceImage);
-
-// Save final invoice to database
-invoiceRouter.post('/save', saveInvoice);
+invoiceRouter.openapi(processRoute, getInvoiceImage as any);
+invoiceRouter.openapi(saveRoute, saveInvoice as any);
 
 export default invoiceRouter;
