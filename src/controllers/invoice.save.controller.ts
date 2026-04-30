@@ -7,6 +7,7 @@ import { matchCustomerByName, resolveOrCreateCustomer } from "../services/custom
 const SaveInvoiceBodySchema = StructuredInvoiceSchema.extend({
     customerId: z.number().int().positive().optional(),
     updateCustomer: z.boolean().optional(),
+    type: z.enum(['SELL', 'BUY']).default('BUY').optional(),
 });
 
 /**
@@ -59,11 +60,23 @@ export const saveInvoice = async (c: Context) => {
             customerId = await resolveOrCreateCustomer(body.customerName);
         }
 
+        const calculatedTotal = body.total ?? body.items.reduce((sum, item) => sum + item.price * item.amount, 0);
+
+        const parseDueDate = (dateStr: string): Date => {
+            if (dateStr.includes('T')) {
+                return new Date(dateStr);
+            }
+            const date = new Date(dateStr + 'T23:59:59Z');
+            return date;
+        };
+
         const invoice = await prisma.invoice.create({
             data: {
-                total: body.total,
-                status: 'PENDING',
-                due_date: body.dueDate ? new Date(body.dueDate) : new Date(),
+                type: body.type || 'BUY',
+                total: calculatedTotal,
+                status: 'PAID',
+                paidAt: new Date(),
+                due_date: parseDueDate(body.dueDate),
                 customer: { connect: { id: customerId } },
                 items: {
                     create: body.items.map(item => ({

@@ -1,5 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { StructuredInvoiceSchema } from '../schemas/invoice.schema';
+import { StructuredInvoiceSchema, CreateInvoiceSchema } from '../schemas/invoice.schema';
 
 const SAMPLE_STRUCTURED = {
   customerName: 'CREATIVE MEDIA',
@@ -313,3 +313,263 @@ export const saveRoute = createRoute({
     500: { description: 'Server error', content: { 'application/json': { schema: ErrorSchema } } },
   },
 });
+
+const InvoiceSchema = z.object({
+  id: z.number().int(),
+  type: z.enum(['SELL', 'BUY']),
+  total: z.string().or(z.number()),
+  status: z.enum(['PENDING', 'PAID', 'OUTDUE']),
+  score: z.number().int(),
+  dueDate: z.string().datetime().nullable(),
+  paidAt: z.string().datetime().nullable(),
+  customerId: z.number().int(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+}).openapi('Invoice');
+
+const CreateInvoiceRoute = createRoute({
+  method: 'post',
+  path: '/create',
+  tags: ['Invoice'],
+  summary: 'Create invoice directly',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: CreateInvoiceSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Invoice created',
+      content: { 'application/json': { schema: z.object({ status: z.literal('ok'), invoiceId: z.number(), paymentUrl: z.string(), invoice: z.any() }) } },
+    },
+    400: { description: 'Bad request', content: { 'application/json': { schema: ErrorSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: ErrorSchema } } },
+  },
+});
+
+const CustomerSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  score: z.number().int(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+}).openapi('Customer');
+
+const FinancialsRoute = createRoute({
+  method: 'get',
+  path: '/',
+  tags: ['Financials'],
+  summary: 'Get financial summary',
+  request: {
+    query: z.object({
+      period: z.string().default('month').openapi({ description: 'today, month, last30days, or range', example: 'month' }),
+      startDate: z.string().optional().openapi({ description: 'Start date for range period (ISO format)', example: '2026-04-01' }),
+      endDate: z.string().optional().openapi({ description: 'End date for range period (ISO format)', example: '2026-04-30' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Financial summary',
+      content: { 'application/json': { schema: z.object({
+        status: z.literal('ok'),
+        summary: z.object({
+          period: z.string(),
+          startDate: z.string().datetime(),
+          endDate: z.string().datetime(),
+          revenue: z.object({
+            total: z.number(),
+            paid: z.number(),
+            debt: z.number(),
+          }),
+          expenses: z.object({
+            total: z.number(),
+            paid: z.number(),
+            debt: z.number(),
+          }),
+          netProfit: z.number(),
+        })
+      }) } },
+    },
+  },
+});
+
+const GetCustomerRoute = createRoute({
+  method: 'post',
+  path: '/get',
+  tags: ['Customer'],
+  summary: 'Get customer profile',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ id: z.number().int() }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Customer profile' },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorSchema } } },
+  },
+});
+
+const UpdateCustomerRoute = createRoute({
+  method: 'post',
+  path: '/update',
+  tags: ['Customer'],
+  summary: 'Update customer',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ id: z.number().int(), name: z.string() }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Customer updated' },
+  },
+});
+
+const DeleteCustomerRoute = createRoute({
+  method: 'post',
+  path: '/delete',
+  tags: ['Customer'],
+  summary: 'Delete customer',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ id: z.number().int() }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Customer deleted' },
+  },
+});
+
+const ListCustomersRoute = createRoute({
+  method: 'post',
+  path: '/list',
+  tags: ['Customer'],
+  summary: 'List customers',
+  request: {
+    body: {
+      required: false,
+      content: { 'application/json': { schema: z.object({ limit: z.number().default(50), offset: z.number().default(0) }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Customer list' },
+  },
+});
+
+const CreateCustomerRoute = createRoute({
+  method: 'post',
+  path: '/',
+  tags: ['Customer'],
+  summary: 'Create customer',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ name: z.string(), notes: z.string().optional() }) } },
+    },
+  },
+  responses: {
+    201: { description: 'Customer created' },
+  },
+});
+
+const GetInvoiceRoute = createRoute({
+  method: 'post',
+  path: '/get',
+  tags: ['Invoice'],
+  summary: 'Get invoice',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ id: z.number().int() }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Invoice' },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorSchema } } },
+  },
+});
+
+const UpdateInvoiceRoute = createRoute({
+  method: 'post',
+  path: '/update',
+  tags: ['Invoice'],
+  summary: 'Update invoice',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ id: z.number().int(), status: z.string().optional(), dueDate: z.string().optional(), type: z.string().optional() }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Invoice updated' },
+  },
+});
+
+const DeleteInvoiceRoute = createRoute({
+  method: 'post',
+  path: '/delete',
+  tags: ['Invoice'],
+  summary: 'Delete invoice',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ id: z.number().int() }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Invoice deleted' },
+  },
+});
+
+const PayInvoiceRoute = createRoute({
+  method: 'post',
+  path: '/pay',
+  tags: ['Invoice'],
+  summary: 'Pay invoice',
+  request: {
+    body: {
+      required: true,
+      content: { 'application/json': { schema: z.object({ id: z.number().int() }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Payment processed' },
+  },
+});
+
+const ListInvoicesRoute = createRoute({
+  method: 'post',
+  path: '/list',
+  tags: ['Invoice'],
+  summary: 'List invoices',
+  request: {
+    body: {
+      required: false,
+      content: { 'application/json': { schema: z.object({ customerId: z.number().optional(), type: z.enum(['SELL', 'BUY']).optional(), status: z.enum(['PENDING', 'PAID', 'OUTDUE']).optional(), limit: z.number().default(50), offset: z.number().default(0) }) } },
+    },
+  },
+  responses: {
+    200: { description: 'Invoice list' },
+  },
+});
+
+
+export {
+  CreateInvoiceRoute,
+  ListInvoicesRoute,
+  GetInvoiceRoute,
+  UpdateInvoiceRoute,
+  DeleteInvoiceRoute,
+  PayInvoiceRoute,
+  CreateCustomerRoute,
+  GetCustomerRoute,
+  UpdateCustomerRoute,
+  DeleteCustomerRoute,
+  ListCustomersRoute,
+  FinancialsRoute,
+  InvoiceSchema,
+  CustomerSchema,
+};

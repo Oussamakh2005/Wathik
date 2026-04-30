@@ -18,6 +18,11 @@ enum InvoiceStatus {
   OUTDUE
 }
 
+enum InvoiceType {
+  SELL
+  BUY
+}
+
 model Customer {
   id        Int            @id @default(autoincrement())
   name      String
@@ -40,16 +45,19 @@ model Item {
 }
 
 model Invoice {
-  id          Int           @id @default(autoincrement())
-  items       Item[]
-  total       Decimal       @db.Decimal(12, 2)
-  status      InvoiceStatus
-  due_date    DateTime      @db.Date
-  notes       NoteInvoice[]
-  customer_id Int
-  customer    Customer      @relation(fields: [customer_id], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             Int           @id @default(autoincrement())
+  items          Item[]
+  total          Decimal       @db.Decimal(12, 2)
+  status         InvoiceStatus
+  type           InvoiceType   @default(SELL)
+  due_date       DateTime      @db.Date
+  score          Int           @default(100)
+  paidAt         DateTime?
+  notes          NoteInvoice[]
+  customer_id    Int
+  customer       Customer      @relation(fields: [customer_id], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model NoteCustomer {
