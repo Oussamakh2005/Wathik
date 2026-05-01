@@ -55,15 +55,18 @@ export const getInvoiceImage = async (c: Context) => {
         }
 
         console.log(`OCR extracted ${ocrText.length} characters`);
+        console.log(`OCR text: ${ocrText.substring(0, 200)}...`);
 
         const ocrOnlyParam = (c.req.query('ocrOnly') || '').toLowerCase();
         const ocrOnly = ocrOnlyParam === '1' || ocrOnlyParam === 'true' || ocrOnlyParam === 'yes';
         if (ocrOnly) {
-            return c.json({
+            const ocrOnlyResult = {
                 status: 'ok',
                 msg: "OCR extracted successfully",
                 rawOCR: ocrText,
-            }, 200);
+            };
+            console.log('Sending OCR-only result:', JSON.stringify(ocrOnlyResult, null, 2));
+            return c.json(ocrOnlyResult, 200);
         }
 
         // Step 2: LLM - Structure OCR text into invoice data
@@ -72,17 +75,21 @@ export const getInvoiceImage = async (c: Context) => {
         const llmService = createOpenRouterService();
         const structuredInvoice = await llmService.structureInvoiceText(ocrText);
         console.log(`LLM response received in ${Date.now() - llmStart}ms`);
+        console.log('Structured invoice:', JSON.stringify(structuredInvoice, null, 2));
 
         // Step 3: Match extracted customer name against existing customers
         const customerMatch = await matchCustomerByName(structuredInvoice.customerName);
+        console.log('Customer match result:', JSON.stringify(customerMatch, null, 2));
 
-        return c.json({
+        const finalResult = {
             status: 'ok',
             msg: "Invoice processed successfully",
             rawOCR: ocrText,
             structured: structuredInvoice,
             customerMatch,
-        }, 200);
+        };
+        console.log('Sending final result to client:', JSON.stringify(finalResult, null, 2));
+        return c.json(finalResult, 200);
 
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
