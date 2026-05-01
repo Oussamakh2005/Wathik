@@ -1,6 +1,5 @@
 import { Context } from "hono";
 import axios from "axios";
-import FormData from "form-data";
 import { createOpenRouterService } from "../services/llm.service";
 import { matchCustomerByName } from "../services/customer.service";
 
@@ -20,18 +19,18 @@ export const getInvoiceImage = async (c: Context) => {
         const buffer = Buffer.from(arrayBuffer);
         const base64Data = buffer.toString('base64');
 
-        const formData = new FormData();
-        formData.append('filename', file.name);
-        formData.append('base64Image', base64Data);
-        formData.append('isTable', 'true');
-        formData.append('apikey', process.env.OCR_API_KEY || '');
+        const params = new URLSearchParams();
+        params.append('base64Image', base64Data);
+        params.append('isTable', 'true');
+        params.append('apikey', process.env.OCR_API_KEY || '');
+        params.append('filetype', file.type || 'image/jpeg');
 
         console.log(`OCR Request: filename=${file.name}, base64_size=${base64Data.length}, has_apikey=${!!process.env.OCR_API_KEY}`);
 
         let ocrResponse;
         try {
-            ocrResponse = await axios.post('https://api.ocr.space/parse/image', formData, {
-                headers: formData.getHeaders(),
+            ocrResponse = await axios.post('https://api.ocr.space/parse/image', params, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 timeout: 30000,
                 validateStatus: () => true,
             });
