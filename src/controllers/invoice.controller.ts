@@ -18,10 +18,10 @@ export const getInvoiceImage = async (c: Context) => {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // Create FormData with raw binary file using native FormData
+        // Create FormData with file parameter (per OCR.space API docs)
         const formData = new FormData();
         const blob = new Blob([buffer], { type: file.type || 'image/jpeg' });
-        formData.append('imageUpload', blob, file.name);
+        formData.append('file', blob, file.name);
         formData.append('isTable', 'true');
         formData.append('apikey', process.env.OCR_API_KEY || '');
 
