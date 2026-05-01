@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import axios from "axios";
-import { createOpenRouterService } from "../services/llm.service";
+import { createOpenRouterService, createMockService } from "../services/llm.service";
 import { matchCustomerByName } from "../services/customer.service";
 
 export const getInvoiceImage = async (c: Context) => {
@@ -73,7 +73,15 @@ export const getInvoiceImage = async (c: Context) => {
             // Step 2: LLM - Structure OCR text into invoice data
             console.log('LLM request started');
             const llmStart = Date.now();
-            const llmService = createOpenRouterService();
+
+            // Use mock LLM if no API key, otherwise use real provider
+            let llmService;
+            if (process.env.OPENROUTER_API_KEY) {
+                llmService = createOpenRouterService();
+            } else {
+                console.log('Using mock LLM (no OPENROUTER_API_KEY set)');
+                llmService = createMockService();
+            }
             const structuredInvoice = await llmService.structureInvoiceText(ocrText);
             console.log(`LLM response received in ${Date.now() - llmStart}ms`);
             console.log('Structured invoice:', JSON.stringify(structuredInvoice, null, 2));
