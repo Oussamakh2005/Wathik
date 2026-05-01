@@ -95,7 +95,26 @@ export const getInvoiceImage = async (c: Context) => {
         } catch (llmErr) {
             const llmErrorMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
             console.error('LLM/customer processing error:', llmErrorMsg);
-            console.error('Full error:', llmErr);
+            console.error('Full error:', JSON.stringify(llmErr, null, 2));
+
+            // Check for rate limiting
+            if (llmErrorMsg.includes('429') || llmErrorMsg.includes('Too Many Requests')) {
+                return c.json({
+                    status: 'error',
+                    msg: "LLM provider rate limited - please try again later",
+                    error: llmErrorMsg,
+                }, 429);
+            }
+
+            // Check for auth/key issues
+            if (llmErrorMsg.includes('401') || llmErrorMsg.includes('403') || llmErrorMsg.includes('API key')) {
+                return c.json({
+                    status: 'error',
+                    msg: "LLM provider authentication failed - check API key",
+                    error: llmErrorMsg,
+                }, 401);
+            }
+
             return c.json({
                 status: 'error',
                 msg: "Failed to process invoice with LLM",
