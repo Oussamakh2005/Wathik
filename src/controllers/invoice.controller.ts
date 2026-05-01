@@ -17,20 +17,19 @@ export const getInvoiceImage = async (c: Context) => {
         // Step 1: OCR - Extract text from image
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const base64Data = buffer.toString('base64');
 
-        const params = new URLSearchParams();
-        params.append('base64Image', base64Data);
-        params.append('isTable', 'true');
-        params.append('apikey', process.env.OCR_API_KEY || '');
-        params.append('filetype', file.type || 'image/jpeg');
+        // Create FormData with raw binary file using native FormData
+        const formData = new FormData();
+        const blob = new Blob([buffer], { type: file.type || 'image/jpeg' });
+        formData.append('imageUpload', blob, file.name);
+        formData.append('isTable', 'true');
+        formData.append('apikey', process.env.OCR_API_KEY || '');
 
-        console.log(`OCR Request: filename=${file.name}, base64_size=${base64Data.length}, has_apikey=${!!process.env.OCR_API_KEY}`);
+        console.log(`OCR Request: filename=${file.name}, size=${file.size}, has_apikey=${!!process.env.OCR_API_KEY}`);
 
         let ocrResponse;
         try {
-            ocrResponse = await axios.post('https://api.ocr.space/parse/image', params, {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            ocrResponse = await axios.post('https://api.ocr.space/parse/image', formData, {
                 timeout: 30000,
                 validateStatus: () => true,
             });
