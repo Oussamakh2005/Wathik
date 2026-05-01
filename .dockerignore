@@ -1,0 +1,16 @@
+node_modules
+generated
+.git
+.env
+.env.*
+!.env.example
+prisma/.env
+*.log
+.vscode
+.idea
+.DS_Store
+README.md
+docker-compose*.yml
+Dockerfile
+.dockerignore
+src/tests

@@ -18,7 +18,7 @@ async function runInternalOcrTest() {
   const arrayBuffer = await file.arrayBuffer();
 
   const formData = new FormData();
-  const uploadFile = new File([arrayBuffer], "image.png", { type: "image/webp" });
+  const uploadFile = new File([arrayBuffer], "image.png", { type: "image/png" });
   formData.append("file", uploadFile);
 
   const response = await fetch(OCR_ENDPOINT, {

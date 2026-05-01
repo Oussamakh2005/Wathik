@@ -17,7 +17,7 @@ async function runOcrTest() {
   const file = Bun.file(fileUrl);
   const arrayBuffer = await file.arrayBuffer();
   const base64 = Buffer.from(arrayBuffer).toString("base64");
-  const dataUrl = `data:image/webp;base64,${base64}`;
+  const dataUrl = `data:image/png;base64,${base64}`;
 
   const ocrResponse = await ocrSpace(dataUrl, {
     apiKey,

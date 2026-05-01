@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun src/tests/ocr.llm.internal.test.ts)",
+      "Bash(sed 's/=.*$/=<set>/')",
+      "Bash(bun -e ' *)",
+      "Bash(bun src/tests/_probe.ts)",
+      "Bash(awk 'NR==10' D:/projects/Wathik/src/controllers/invoice.controller.ts)",
+      "Bash(bun pm *)",
+      "Bash(bun info *)",
+      "Bash(PORT=3099 bun run src/index.ts)",
+      "Read(//tmp/**)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('paths:', list\\(d.get\\('paths',{}\\).keys\\(\\)\\)\\); print\\('schemas:', list\\(d.get\\('components',{}\\).get\\('schemas',{}\\).keys\\(\\)\\)\\)\")",
+      "Bash(kill %1)",
+      "Bash(pkill -f \"PORT=3099\")",
+      "Bash(powershell -NoProfile -Command 'Get-Process bun -ErrorAction SilentlyContinue | Where-Object { \\(Get-NetTCPConnection -OwningProcess $_.Id -ErrorAction SilentlyContinue | Where-Object LocalPort -eq 3099\\) } | Stop-Process -Force')",
+      "Bash(powershell -NoProfile -Command 'Get-NetTCPConnection -LocalPort 3099 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }')",
+      "Bash(bunx prisma *)",
+      "Bash(bun --bun run prisma migrate dev --name add_invoice_customer_link --create-only)",
+      "Bash(bun --bun run prisma migrate dev)",
+      "Bash(bun --bun run prisma generate)",
+      "Bash(python -c ' *)",
+      "Bash(PORT=3099 PUBLIC_API_URL=http://localhost:3099 bun run src/index.ts)",
+      "Bash(docker version *)"
+    ]
+  }
+}
