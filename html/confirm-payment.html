@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إتمام الدفع – WATHIQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+    </script>
+    <style>
+        :root {
+            --purple-deep: #1E1B6E;
+            --purple-main: #2D2A9B;
+            --purple-light: #4b45b1;
+            --purple-soft: #E8E7F8;
+            --green-main: #22A45D;
+            --gray-bg: #F0F1F8;
+            --gray-border: #E2E4EF;
+            --white: #FFFFFF;
+            --text-dark: #1A1845;
+            --text-muted: #8890B5;
+            --blue-badge-bg: #EEF0FF;
+            --blue-badge: #3D3ACC;
+            --shadow-card: 0 8px 40px rgba(30, 27, 110, .13);
+            --radius-lg: 22px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--gray-bg);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════════════
+     HEADER
+  ═══════════════════════════════════════════════ */
+        header {
+            background: linear-gradient(135deg, var(--purple-deep) 0%, var(--purple-light) 100%);
+            padding: 30px 24px 90px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -70px;
+            left: -70px;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .05);
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            right: -40px;
+            width: 230px;
+            height: 230px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .06);
+        }
+
+        .header-inner {
+            max-width: 980px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .brand span {
+            color: #A8AAFF;
+        }
+
+        .brand-sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, .6);
+            margin-top: 3px;
+        }
+
+        .header-icon {
+            width: 42px;
+            height: 42px;
+            background: rgba(255, 255, 255, .13);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ═══════════════════════════════════════════════
+     PAGE BODY  (pulls up over header)
+  ═══════════════════════════════════════════════ */
+        .page-body {
+            max-width: 980px;
+            margin: -62px auto 52px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ═══════════════════════════════════════════════
+     RESPONSIVE TWO-COLUMN GRID
+  ═══════════════════════════════════════════════ */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (min-width: 768px) {
+            .layout-grid {
+                grid-template-columns: 1.1fr 0.9fr;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════
+     SHARED CARD
+  ═══════════════════════════════════════════════ */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: 28px 26px;
+        }
+
+        /* ═══════════════════════════════════════════════
+     INVOICE
+  ═══════════════════════════════════════════════ */
+        .inv-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            border-bottom: 1.5px solid var(--gray-border);
+            margin-bottom: 16px;
+        }
+
+        .inv-brand {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--purple-main);
+        }
+
+        .inv-brand-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .inv-badge {
+            background: #EDFAF3;
+            color: var(--green-main);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 5px 16px;
+            border-radius: 20px;
+        }
+
+        .inv-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13.5px;
+            margin-bottom: 7px;
+        }
+
+        .inv-meta .k {
+            color: var(--text-muted);
+        }
+
+        .inv-meta .v {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .inv-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 14px;
+        }
+
+        .inv-table thead tr {
+            background: var(--gray-bg);
+        }
+
+        .inv-table th {
+            padding: 10px 12px;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-align: right;
+        }
+
+        .inv-table th:first-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        .inv-table th:last-child {
+            border-radius: 8px 0 0 8px;
+        }
+
+        .inv-table td {
+            padding: 12px 12px;
+            text-align: right;
+            border-bottom: 1px solid var(--gray-border);
+        }
+
+        .inv-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 1.5px solid var(--gray-border);
+        }
+
+        .inv-total-lbl {
+            font-size: 15px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .inv-total-amt {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--purple-main);
+        }
+
+        .inv-thanks {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px dashed var(--gray-border);
+        }
+
+        /* ═══════════════════════════════════════════════
+     ACTIONS COLUMN
+  ═══════════════════════════════════════════════ */
+        .actions-col {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Summary box */
+        .summary-box {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
+            padding: 22px 24px;
+        }
+
+        .sum-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--gray-border);
+        }
+
+        .sum-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 9px;
+        }
+
+        .sum-row .k {
+            color: var(--text-muted);
+        }
+
+        .sum-row .v {
+            font-weight: 600;
+        }
+
+        .sum-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1.5px solid var(--gray-border);
+            margin-top: 4px;
+        }
+
+        .sum-total .k {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .sum-total .v {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--purple-main);
+        }
+
+        /* ═══════════════════════════════════════════════
+     BUTTONS
+  ═══════════════════════════════════════════════ */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .25s;
+            letter-spacing: .3px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple-main), var(--purple-light));
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(45, 42, 155, .32);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(45, 42, 155, .42);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-outline {
+            background: var(--white);
+            color: var(--purple-main);
+            border: 1.5px solid var(--purple-soft);
+            box-shadow: 0 2px 12px rgba(30, 27, 110, .07);
+        }
+
+        .btn-outline:hover {
+            background: var(--blue-badge-bg);
+            border-color: var(--purple-light);
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #22A45D, #1DB955);
+            color: #fff;
+            box-shadow: 0 4px 18px rgba(34, 164, 93, .32);
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 26px rgba(34, 164, 93, .42);
+        }
+
+        .btn-confirm:active {
+            transform: translateY(0);
+        }
+
+        /* Loading state */
+        .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, .35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .btn-outline .spinner {
+            border-color: rgba(45, 42, 155, .2);
+            border-top-color: var(--purple-main);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn.loading .spinner {
+            display: block;
+        }
+
+        .btn.loading {
+            pointer-events: none;
+            opacity: .85;
+        }
+
+        /* ═══════════════════════════════════════════════
+     PAYMENT SHEET (modal)
+  ═══════════════════════════════════════════════ */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 13, 60, .55);
+            backdrop-filter: blur(4px);
+            z-index: 300;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .overlay.active {
+            display: flex;
+            animation: fadeIn .2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(70px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .payment-sheet {
+            background: var(--white);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            padding: 20px 24px 36px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 94vh;
+            overflow-y: auto;
+            animation: slideUp .28s cubic-bezier(.22, .68, 0, 1.2);
+            position: relative;
+        }
+
+        .payment-sheet::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .payment-sheet::-webkit-scrollbar-thumb {
+            background: var(--gray-border);
+            border-radius: 4px;
+        }
+
+        .sheet-handle {
+            width: 42px;
+            height: 5px;
+            background: var(--gray-border);
+            border-radius: 99px;
+            margin: 0 auto 20px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 18px;
+            left: 20px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: var(--gray-bg);
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .2s;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            background: var(--gray-border);
+        }
+
+        /* Payment header */
+        .pay-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .pay-title {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .price-pill {
+            background: var(--blue-badge-bg);
+            color: var(--blue-badge);
+            font-size: 14px;
+            font-weight: 700;
+            padding: 6px 16px;
+            border-radius: 99px;
+        }
+
+        .plan-lbl {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: var(--gray-bg);
+            border-radius: 99px;
+            padding: 4px;
+            margin-bottom: 22px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 11px 0;
+            border: none;
+            background: transparent;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-radius: 99px;
+            cursor: pointer;
+            transition: all .22s;
+        }
+
+        .tab-btn.active {
+            background: var(--purple-main);
+            color: #fff;
+            box-shadow: 0 3px 12px rgba(45, 42, 155, .28);
+        }
+
+        /* Fields */
+        .field-group {
+            margin-bottom: 14px;
+        }
+
+        .field-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .field-row .field-group {
+            flex: 1;
+        }
+
+        .field-lbl {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .field-input {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1.5px solid var(--gray-border);
+            border-radius: var(--radius-sm);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 15px;
+            color: var(--text-dark);
+            background: var(--white);
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+            direction: ltr;
+            text-align: right;
+        }
+
+        .field-input:focus {
+            border-color: var(--purple-main);
+            box-shadow: 0 0 0 3px rgba(45, 42, 155, .1);
+        }
+
+        .field-input::placeholder {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .icon-wrap {
+            position: relative;
+        }
+
+        .icon-wrap .field-input {
+            padding-left: 42px;
+        }
+
+        .field-icon {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 17px;
+            pointer-events: none;
+        }
+
+        /* BaridiMob */
+        .bar-title {
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .bar-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .rip-box {
+            background: var(--blue-badge-bg);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            text-align: center;
+            margin-bottom: 16px;
+            border: 1px solid #d0d4f7;
+        }
+
+        .rip-box p {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--purple-main);
+            line-height: 1.9;
+            direction: ltr;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1.5px solid var(--purple-main);
+            color: var(--purple-main);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 18px;
+            border-radius: 99px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all .2s;
+        }
+
+        .copy-btn:hover,
+        .copy-btn.copied {
+            background: var(--purple-main);
+            color: #fff;
+        }
+
+        .divider {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin: 4px 0 16px;
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 36%;
+            height: 1px;
+            background: var(--gray-border);
+        }
+
+        .divider::before {
+            right: 0;
+        }
+
+        .divider::after {
+            left: 0;
+        }
+
+        /* Success */
+        .success-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 20px 10px;
+            text-align: center;
+        }
+
+        .success-screen.show {
+            display: flex;
+            animation: fadeIn .3s ease;
+        }
+
+        .suc-icon {
+            width: 76px;
+            height: 76px;
+            background: #EDFAF3;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-bottom: 18px;
+            animation: pop .4s cubic-bezier(.22, .68, 0, 1.5) .1s both;
+        }
+
+        @keyframes pop {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .suc-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .suc-sub {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* ═══════════════════════════════════════════════
+     TOAST
+  ═══════════════════════════════════════════════ */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1A1845;
+            color: #fff;
+            padding: 12px 22px;
+            border-radius: 99px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 999;
+            white-space: nowrap;
+            transition: transform .3s cubic-bezier(.22, .68, 0, 1.2), opacity .3s;
+            opacity: 0;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ════════════════════════════
+     HEADER
+════════════════════════════ -->
+    <header>
+        <div class="header-inner">
+            <div>
+                <div class="brand">WATHIQ <span>APP</span></div>
+                <div class="brand-sub">مدير الفواتير والمالية</div>
+            </div>
+            <div class="header-icon">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M3 5h16M3 11h12M3 17h14" stroke="white" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <!-- ════════════════════════════
+     PAGE BODY
+════════════════════════════ -->
+    <div class="page-body">
+        <div class="layout-grid">
+
+            <!-- ── INVOICE CARD ── -->
+            <div class="card" id="invoiceCard">
+                <div class="inv-head">
+                    <div>
+                        <div class="inv-brand">WATHIQ</div>
+                        <div class="inv-brand-sub">مدير الفواتير والمالية</div>
+                    </div>
+                    <span class="inv-badge">فاتورة</span>
+                </div>
+
+                <div class="inv-meta"><span class="k">رقم الفاتورة:</span><span class="v" id="invNumber">INV-...</span>
+                </div>
+                <div class="inv-meta"><span class="k">التاريخ:</span><span class="v" id="invDate">...</span></div>
+                <div class="inv-meta"><span class="k">فاتورة إلى:</span><span class="v" id="invCustomer">...</span>
+                </div>
+
+                <table class="inv-table">
+                    <thead>
+                        <tr>
+                            <th>المنتج</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invTableBody">
+                        <tr>
+                            <td>...</td>
+                            <td>...</td>
+                            <td>...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="inv-total">
+                    <span class="inv-total-lbl">الإجمالي:</span>
+                    <span class="inv-total-amt" id="invTotalAmt">DA ...</span>
+                </div>
+                <p class="inv-thanks">🎉 شكراً لتعاملكم معنا</p>
+            </div>
+
+            <!-- ── ACTIONS COLUMN ── -->
+            <div class="actions-col">
+
+                <!-- Summary -->
+                <div class="summary-box">
+                    <div class="sum-title">ملخص الطلب</div>
+                    <div class="sum-row"><span class="k">الخطة</span><span class="v">Starter – بداية</span></div>
+                    <div class="sum-row"><span class="k">طريقة الدفع</span><span class="v">بطاقة / BaridiMob</span>
+                    </div>
+                    <div class="sum-row"><span class="k">رقم الفاتورة</span><span class="v"
+                            id="sumInvNumber">INV-...</span></div>
+                    <div class="sum-total">
+                        <span class="k">المبلغ الإجمالي</span>
+                        <span class="v" id="sumTotalAmt">DA ...</span>
+                    </div>
+                </div>
+
+                <!-- Pay Now -->
+                <button class="btn btn-primary" onclick="openPayment()">
+                    <span>💳</span>
+                    <span>إدفع الآن</span>
+                </button>
+
+                <!-- Download PDF -->
+                <button class="btn btn-outline" id="btnPDF" onclick="downloadPDF()">
+                    <div class="spinner"></div>
+                    <span>⬇️</span>
+                    <span>تنزيل الفاتورة PDF</span>
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════
+     PAYMENT OVERLAY
+════════════════════════════ -->
+    <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+        <div class="payment-sheet">
+            <button class="close-btn" onclick="closePayment()">✕</button>
+            <div class="sheet-handle"></div>
+
+            <!-- Success -->
+            <div class="success-screen" id="successScreen">
+                <div class="suc-icon">✅</div>
+                <div class="suc-title">تم الدفع بنجاح!</div>
+                <p class="suc-sub">تم استلام دفعتك بنجاح.<br>سيتم تفعيل خطتك خلال لحظات.</p>
+                <button class="btn btn-confirm" style="margin-top:24px" onclick="closePayment()">إغلاق</button>
+            </div>
+
+            <!-- Form -->
+            <div id="payForm">
+                <div class="pay-top">
+                    <div class="pay-title">إتمام الدفع</div>
+                    <div class="price-pill" id="pricePill">4$ / شهر</div>
+                </div>
+                <p class="plan-lbl">الخطة المحددة: Starter – بداية</p>
+
+                <div class="tabs">
+                    <button class="tab-btn active" id="tabBaridi" onclick="switchTab('baridi')">BaridiMob</button>
+                    <button class="tab-btn" id="tabCard" onclick="switchTab('card')">EDAHABIA / CIB</button>
+                </div>
+
+                <!-- BaridiMob panel -->
+                <div id="panelBaridi">
+                    <div class="bar-title">الدفع عبر تطبيق بريدي موب</div>
+                    <p class="bar-sub">يرجى تحويل المبلغ إلى الحساب التالي:</p>
+                    <div class="rip-box">
+                        <p>RIP: 007 99999 0000000000 12</p>
+                        <p>Name: WATHIQ APP</p>
+                        <button class="copy-btn" id="copyBtn" onclick="copyRIP()">نسخ RIP</button>
+                    </div>
+                    <div class="divider">ثم أدخل بياناتك</div>
+                    <div class="field-group">
+                        <label class="field-lbl">رقم هاتفك أو RIP الخاص بك</label>
+                        <div class="icon-wrap">
+                            <span class="field-icon">📱</span>
+                            <input class="field-input" type="text" placeholder="0xx xxx xxxx أو RIP">
+                        </div>
+                    </div>
+                    <button class="btn btn-confirm" onclick="confirmPayment()">تأكيد الدفع</button>
+                </div>
+
+                <!-- Card panel -->
+                <div id="panelCard" style="display:none">
+                    <div class="field-group">
+                        <label class="field-lbl">رقم البطاقة (16 رقم)</label>
+                        <div class="icon-wrap">
+                            <span class="field-icon">💳</span>
+                            <input class="field-input" type="text" placeholder="XXXX  XXXX  XXXX  XXXX" maxlength="19"
+                                oninput="formatCard(this)">
+                        </div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label class="field-lbl">تاريخ الانتهاء</label>
+                            <input class="field-input" type="text" placeholder="MM/YY" maxlength="5"
+                                oninput="formatExpiry(this)">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-lbl">CVV2</label>
+                            <input class="field-input" type="password" placeholder="···" maxlength="4">
+                        </div>
+                    </div>
+                    <button class="btn btn-confirm" onclick="confirmPayment()">تأكيد الدفع</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <span id="toastIcon">📄</span>
+        <span id="toastMsg">جاري إنشاء ملف PDF...</span>
+    </div>
+
+    <script>
+        /* ───────────────────────────────────────
+           GLOBAL STATE
+        ─────────────────────────────────────── */
+        window._invoiceId = null;
+        window._invoiceData = null;
+
+        /* ───────────────────────────────────────
+           URL PARAMS – EXTRACT INVOICE ID
+        ─────────────────────────────────────── */
+        function getInvoiceIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            return id ? parseInt(id, 10) : null;
+        }
+
+        /* ───────────────────────────────────────
+           API – FETCH INVOICE DATA
+        ─────────────────────────────────────── */
+        async function fetchInvoiceData(id) {
+            const response = await fetch('https://api.wathik.amara57.com/api/invoice/get', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            if (data.status !== 'ok' || !data.invoice) {
+                throw new Error('استجابة غير صالحة من الخادم');
+            }
+            return data.invoice;
+        }
+
+        /* ───────────────────────────────────────
+           RENDER INVOICE DATA INTO THE PAGE
+        ─────────────────────────────────────── */
+        function renderInvoiceData(invoice) {
+            // Store globally for PDF filename & other uses
+            window._invoiceId = invoice.id;
+            window._invoiceData = invoice;
+
+            // Format date
+            const date = new Date(invoice.createdAt);
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}/${mm}/${dd}`;
+
+            // Invoice card
+            document.getElementById('invNumber').textContent = `INV-${invoice.id}`;
+            document.getElementById('invDate').textContent = formattedDate;
+            document.getElementById('invCustomer').textContent = invoice.customer.name;
+
+            // Table body
+            const tbody = document.getElementById('invTableBody');
+            tbody.innerHTML = '';
+            invoice.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${escapeHTML(item.name)}</td>
+                    <td>${item.amount}</td>
+                    <td>DA ${parseFloat(item.price).toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Totals
+            const totalFormatted = `DA ${parseFloat(invoice.total).toFixed(2)}`;
+            document.getElementById('invTotalAmt').textContent = totalFormatted;
+            document.getElementById('sumTotalAmt').textContent = totalFormatted;
+            document.getElementById('sumInvNumber').textContent = `INV-${invoice.id}`;
+
+            // Update price pill in payment sheet
+            document.getElementById('pricePill').textContent = totalFormatted;
+        }
+
+        /* ───────────────────────────────────────
+           SIMPLE HTML ESCAPE
+        ─────────────────────────────────────── */
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        /* ───────────────────────────────────────
+           INIT – RUN ON PAGE LOAD
+        ─────────────────────────────────────── */
+        async function initInvoice() {
+            const id = getInvoiceIdFromURL();
+
+            if (!id) {
+                showToast('⚠️ لم يتم العثور على معرف الفاتورة في الرابط (?id=...)', '⚠️', 5000);
+                // Keep placeholder content visible
+                return;
+            }
+
+            showToast('جاري تحميل بيانات الفاتورة...', '📄', 15000);
+
+            try {
+                const invoice = await fetchInvoiceData(id);
+                renderInvoiceData(invoice);
+                showToast('تم تحميل الفاتورة بنجاح', '✅', 2500);
+            } catch (err) {
+                console.error('Invoice fetch error:', err);
+                showToast('تعذر تحميل بيانات الفاتورة. تحقق من الاتصال أو معرف الفاتورة.', '❌', 5000);
+                // Restore placeholder values on error so the page isn't stuck on "..."
+                document.getElementById('invNumber').textContent = 'INV-خطأ';
+                document.getElementById('invDate').textContent = '--/--/----';
+                document.getElementById('invCustomer').textContent = '--';
+                document.getElementById('invTotalAmt').textContent = 'DA --';
+                document.getElementById('sumTotalAmt').textContent = 'DA --';
+                document.getElementById('sumInvNumber').textContent = 'INV-خطأ';
+                document.getElementById('invTableBody').innerHTML =
+                    '<tr><td>—</td><td>—</td><td>—</td></tr>';
+            }
+        }
+
+        // Kick off when DOM is ready
+        document.addEventListener('DOMContentLoaded', initInvoice);
+
+        /* ── MODAL ──────────────────────────────── */
+        function openPayment() {
+            document.getElementById('overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePayment() {
+            document.getElementById('overlay').classList.remove('active');
+            document.body.style.overflow = '';
+            setTimeout(() => {
+                document.getElementById('successScreen').classList.remove('show');
+                document.getElementById('payForm').style.display = '';
+            }, 300);
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target.classList.contains('overlay')) closePayment();
+        }
+
+        /* ── TABS ───────────────────────────────── */
+        function switchTab(t) {
+            const isB = t === 'baridi';
+            document.getElementById('tabBaridi').classList.toggle('active', isB);
+            document.getElementById('tabCard').classList.toggle('active', !isB);
+            document.getElementById('panelBaridi').style.display = isB ? '' : 'none';
+            document.getElementById('panelCard').style.display = isB ? 'none' : '';
+        }
+
+        /* ── FIELD FORMATTERS ───────────────────── */
+        function formatCard(el) {
+            let v = el.value.replace(/\D/g, '').substring(0, 16);
+            el.value = v.replace(/(.{4})/g, '$1 ').trim();
+        }
+
+        function formatExpiry(el) {
+            let v = el.value.replace(/\D/g, '').substring(0, 4);
+            if (v.length >= 3) v = v.substring(0, 2) + '/' + v.substring(2);
+            el.value = v;
+        }
+
+        /* ── CONFIRM ────────────────────────────── */
+        /*function confirmPayment() {
+            document.getElementById('payForm').style.display = 'none';
+            document.getElementById('successScreen').classList.add('show');
+        }*/
+        /* ── CONFIRM ────────────────────────────── */
+        async function confirmPayment() {
+            const invoiceId = window._invoiceId;
+            if (!invoiceId) {
+                showToast('لا يوجد معرف فاتورة صالح', '❌', 3000);
+                return;
+            }
+
+            // Disable the button to prevent double clicks (optional)
+            const confirmButtons = document.querySelectorAll('.btn-confirm');
+            confirmButtons.forEach(btn => btn.disabled = true);
+
+            try {
+                const response = await fetch('https://api.wathik.amara57.com/api/invoice/pay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: invoiceId })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                // Payment confirmed – show success screen
+                document.getElementById('payForm').style.display = 'none';
+                document.getElementById('successScreen').classList.add('show');
+            } catch (err) {
+                console.error('Payment error:', err);
+                showToast('فشل تأكيد الدفع، حاول مرة أخرى', '❌', 3000);
+            } finally {
+                // Re-enable buttons
+                confirmButtons.forEach(btn => btn.disabled = false);
+            }
+        }
+
+        /* ── COPY RIP ───────────────────────────── */
+        function copyRIP() {
+            navigator.clipboard.writeText('007 99999 0000000000 12').then(() => {
+                const b = document.getElementById('copyBtn');
+                b.textContent = '✓ تم النسخ';
+                b.classList.add('copied');
+                setTimeout(() => {
+                    b.textContent = 'نسخ RIP';
+                    b.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        /* ── TOAST ──────────────────────────────── */
+        function showToast(msg, icon = '📄', duration = 3200) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            document.getElementById('toastIcon').textContent = icon;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), duration);
+        }
+
+        /* ── PDF DOWNLOAD ───────────────────────── */
+        async function downloadPDF() {
+            const btn = document.getElementById('btnPDF');
+            btn.classList.add('loading');
+            showToast('جاري إنشاء ملف PDF...', '📄', 10000);
+
+            try {
+                const el = document.getElementById('invoiceCard');
+                const canvas = await html2canvas(el, {
+                    scale: 2.8,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+                const pageW = pdf.internal.pageSize.getWidth();
+                const pageH = pdf.internal.pageSize.getHeight();
+                const ratio = canvas.width / canvas.height;
+                const drawW = pageW - 30;
+                const drawH = drawW / ratio;
+                const offsetY = Math.max(15, (pageH - drawH) / 2);
+
+                pdf.addImage(imgData, 'PNG', 15, offsetY, drawW, drawH);
+
+                // Use dynamic invoice ID for filename, fallback to placeholder
+                const invId = window._invoiceId || 'invoice';
+                pdf.save(`WATHIQ-INV-${invId}.pdf`);
+
+                showToast('تم تنزيل الفاتورة بنجاح!', '✅', 3000);
+            } catch (err) {
+                console.error(err);
+                showToast('حدث خطأ، حاول مجدداً', '❌', 3000);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        }
+    </script>
+</body>
+
+</html>
