@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import axios from "axios";
-import { createOpenRouterService, createMockService } from "../services/llm.service";
+import { createOpenRouterService, createGroqService, createMockService } from "../services/llm.service";
 import { matchCustomerByName } from "../services/customer.service";
 
 export const getInvoiceImage = async (c: Context) => {
@@ -74,12 +74,16 @@ export const getInvoiceImage = async (c: Context) => {
             console.log('LLM request started');
             const llmStart = Date.now();
 
-            // Use mock LLM if no API key, otherwise use real provider
+            // Select LLM provider by priority: Groq > OpenRouter > Mock
             let llmService;
-            if (process.env.OPENROUTER_API_KEY) {
+            if (process.env.GROQ_API_KEY) {
+                console.log('Using Groq LLM');
+                llmService = createGroqService();
+            } else if (process.env.OPENROUTER_API_KEY) {
+                console.log('Using OpenRouter LLM');
                 llmService = createOpenRouterService();
             } else {
-                console.log('Using mock LLM (no OPENROUTER_API_KEY set)');
+                console.log('Using mock LLM (no API keys set)');
                 llmService = createMockService();
             }
             const structuredInvoice = await llmService.structureInvoiceText(ocrText);
