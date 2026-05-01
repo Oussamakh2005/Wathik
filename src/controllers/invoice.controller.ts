@@ -30,7 +30,7 @@ export const getInvoiceImage = async (c: Context) => {
         let ocrResponse;
         try {
             ocrResponse = await axios.post('https://api.ocr.space/parse/image', formData, {
-                timeout: 30000,
+                timeout: 120000,
                 validateStatus: () => true,
             });
         } catch (axiosErr) {
