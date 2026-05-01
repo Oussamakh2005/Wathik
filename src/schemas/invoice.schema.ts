@@ -12,7 +12,7 @@ export const StructuredInvoiceSchema = z.object({
   customerName: z.string().describe('Customer/vendor name'),
   items: z.array(InvoiceItemSchema).describe('List of invoice items'),
   total: z.number().optional().describe('Total amount (calculated if omitted)'),
-  dueDate: z.string().describe('Payment due date (YYYY-MM-DD or ISO datetime)'),
+  dueDate: z.string().optional().describe('Payment due date (YYYY-MM-DD or ISO datetime)'),
 });
 
 export const CreateInvoiceSchema = StructuredInvoiceSchema.extend({
