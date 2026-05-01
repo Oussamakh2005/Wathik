@@ -18,20 +18,41 @@ export const getInvoiceImage = async (c: Context) => {
         // Step 1: OCR - Extract text from image
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
+        const base64Data = buffer.toString('base64');
 
         const formData = new FormData();
         formData.append('filename', file.name);
-        formData.append('base64Image', buffer.toString('base64'));
+        formData.append('base64Image', base64Data);
         formData.append('isTable', 'true');
         formData.append('apikey', process.env.OCR_API_KEY || '');
 
-        const ocrResponse = await axios.post('https://api.ocr.space/parse/image', formData, {
-            headers: formData.getHeaders(),
-            timeout: 30000,
-        });
+        console.log(`OCR Request: filename=${file.name}, base64_size=${base64Data.length}, has_apikey=${!!process.env.OCR_API_KEY}`);
+
+        let ocrResponse;
+        try {
+            ocrResponse = await axios.post('https://api.ocr.space/parse/image', formData, {
+                headers: formData.getHeaders(),
+                timeout: 30000,
+                validateStatus: () => true,
+            });
+        } catch (axiosErr) {
+            const errMsg = axiosErr instanceof Error ? axiosErr.message : String(axiosErr);
+            console.error(`OCR Axios error (before response):`, errMsg);
+            throw axiosErr;
+        }
+
+        console.log(`OCR Response: status=${ocrResponse.status}, statusText=${ocrResponse.statusText}`);
+        console.log(`OCR Response body:`, JSON.stringify(ocrResponse.data, null, 2));
+
+        if (ocrResponse.status !== 200) {
+            const errorDetail = ocrResponse.data?.error?.message || ocrResponse.data?.error || JSON.stringify(ocrResponse.data);
+            console.error(`OCR API error (${ocrResponse.status}):`, errorDetail);
+            return c.json({ status: 'error', msg: `OCR failed with status ${ocrResponse.status}`, detail: errorDetail }, 400);
+        }
 
         const ocrText = ocrResponse.data.ParsedResults?.[0]?.ParsedText;
         if (!ocrText) {
+            console.error('OCR returned no text:', JSON.stringify(ocrResponse.data));
             return c.json({ status: 'error', msg: 'Failed to extract text from image' }, 400);
         }
 
