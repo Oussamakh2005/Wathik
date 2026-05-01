@@ -29,7 +29,9 @@
       "Bash(cd /d D:\\\\projects\\\\Wathik)",
       "Bash(npm list *)",
       "Bash(cd D:\\\\\\\\projects\\\\\\\\Wathik)",
-      "WebFetch(domain:ocr.space)"
+      "WebFetch(domain:ocr.space)",
+      "PowerShell(netstat *)",
+      "PowerShell(taskkill *)"
     ]
   }
 }
