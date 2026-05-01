@@ -1,5 +1,6 @@
 import { Context } from "hono";
-import { ocrSpace } from "ocr-space-api-wrapper";
+import axios from "axios";
+import FormData from "form-data";
 import { createOpenRouterService } from "../services/llm.service";
 import { matchCustomerByName } from "../services/customer.service";
 
@@ -16,15 +17,20 @@ export const getInvoiceImage = async (c: Context) => {
     try {
         // Step 1: OCR - Extract text from image
         const arrayBuffer = await file.arrayBuffer();
-        const base64String = Buffer.from(arrayBuffer).toString('base64');
-        const dataUrl = `data:${file.type};base64,${base64String}`;
+        const buffer = Buffer.from(arrayBuffer);
 
-        const ocrResponse = await ocrSpace(dataUrl, {
-            apiKey: process.env.OCR_API_KEY,
-            isTable: true,
+        const formData = new FormData();
+        formData.append('filename', file.name);
+        formData.append('base64Image', buffer.toString('base64'));
+        formData.append('isTable', 'true');
+        formData.append('apikey', process.env.OCR_API_KEY || '');
+
+        const ocrResponse = await axios.post('https://api.ocr.space/parse/image', formData, {
+            headers: formData.getHeaders(),
+            timeout: 30000,
         });
 
-        const ocrText = ocrResponse.ParsedResults?.[0]?.ParsedText;
+        const ocrText = ocrResponse.data.ParsedResults?.[0]?.ParsedText;
         if (!ocrText) {
             return c.json({ status: 'error', msg: 'Failed to extract text from image' }, 400);
         }
