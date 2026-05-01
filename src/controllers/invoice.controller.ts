@@ -1,6 +1,6 @@
 import { Context } from "hono";
-import { ocrSpace } from "ocr-space-api-wrapper";
-import { createOpenRouterService } from "../services/llm.service";
+import axios from "axios";
+import { createOpenRouterService, createGroqService, createMockService } from "../services/llm.service";
 import { matchCustomerByName } from "../services/customer.service";
 
 export const getInvoiceImage = async (c: Context) => {
@@ -16,48 +16,123 @@ export const getInvoiceImage = async (c: Context) => {
     try {
         // Step 1: OCR - Extract text from image
         const arrayBuffer = await file.arrayBuffer();
-        const base64String = Buffer.from(arrayBuffer).toString('base64');
-        const dataUrl = `data:${file.type};base64,${base64String}`;
+        const buffer = Buffer.from(arrayBuffer);
 
-        const ocrResponse = await ocrSpace(dataUrl, {
-            apiKey: process.env.OCR_API_KEY,
-            isTable: true,
-        });
+        // Create FormData with file parameter (per OCR.space API docs)
+        const formData = new FormData();
+        const blob = new Blob([buffer], { type: file.type || 'image/jpeg' });
+        formData.append('file', blob, file.name);
+        formData.append('isTable', 'true');
+        formData.append('apikey', process.env.OCR_API_KEY || '');
 
-        const ocrText = ocrResponse.ParsedResults?.[0]?.ParsedText;
+        console.log(`OCR Request: filename=${file.name}, size=${file.size}, has_apikey=${!!process.env.OCR_API_KEY}`);
+
+        let ocrResponse;
+        try {
+            ocrResponse = await axios.post('https://api.ocr.space/parse/image', formData, {
+                timeout: 120000,
+                validateStatus: () => true,
+            });
+        } catch (axiosErr) {
+            const errMsg = axiosErr instanceof Error ? axiosErr.message : String(axiosErr);
+            console.error(`OCR Axios error (before response):`, errMsg);
+            throw axiosErr;
+        }
+
+        console.log(`OCR Response: status=${ocrResponse.status}, statusText=${ocrResponse.statusText}`);
+        console.log(`OCR Response body:`, JSON.stringify(ocrResponse.data, null, 2));
+
+        if (ocrResponse.status !== 200) {
+            const errorDetail = ocrResponse.data?.error?.message || ocrResponse.data?.error || JSON.stringify(ocrResponse.data);
+            console.error(`OCR API error (${ocrResponse.status}):`, errorDetail);
+            return c.json({ status: 'error', msg: `OCR failed with status ${ocrResponse.status}`, detail: errorDetail }, 400);
+        }
+
+        const ocrText = ocrResponse.data.ParsedResults?.[0]?.ParsedText;
         if (!ocrText) {
+            console.error('OCR returned no text:', JSON.stringify(ocrResponse.data));
             return c.json({ status: 'error', msg: 'Failed to extract text from image' }, 400);
         }
 
         console.log(`OCR extracted ${ocrText.length} characters`);
+        console.log(`OCR text: ${ocrText.substring(0, 200)}...`);
 
         const ocrOnlyParam = (c.req.query('ocrOnly') || '').toLowerCase();
         const ocrOnly = ocrOnlyParam === '1' || ocrOnlyParam === 'true' || ocrOnlyParam === 'yes';
         if (ocrOnly) {
-            return c.json({
+            const ocrOnlyResult = {
                 status: 'ok',
                 msg: "OCR extracted successfully",
                 rawOCR: ocrText,
-            }, 200);
+            };
+            console.log('Sending OCR-only result:', JSON.stringify(ocrOnlyResult, null, 2));
+            return c.json(ocrOnlyResult, 200);
         }
 
-        // Step 2: LLM - Structure OCR text into invoice data
-        console.log('LLM request started');
-        const llmStart = Date.now();
-        const llmService = createOpenRouterService();
-        const structuredInvoice = await llmService.structureInvoiceText(ocrText);
-        console.log(`LLM response received in ${Date.now() - llmStart}ms`);
+        try {
+            // Step 2: LLM - Structure OCR text into invoice data
+            console.log('LLM request started');
+            const llmStart = Date.now();
 
-        // Step 3: Match extracted customer name against existing customers
-        const customerMatch = await matchCustomerByName(structuredInvoice.customerName);
+            // Select LLM provider by priority: Groq > OpenRouter > Mock
+            let llmService;
+            if (process.env.GROQ_API_KEY) {
+                console.log('Using Groq LLM');
+                llmService = createGroqService();
+            } else if (process.env.OPENROUTER_API_KEY) {
+                console.log('Using OpenRouter LLM');
+                llmService = createOpenRouterService();
+            } else {
+                console.log('Using mock LLM (no API keys set)');
+                llmService = createMockService();
+            }
+            const structuredInvoice = await llmService.structureInvoiceText(ocrText);
+            console.log(`LLM response received in ${Date.now() - llmStart}ms`);
+            console.log('Structured invoice:', JSON.stringify(structuredInvoice, null, 2));
 
-        return c.json({
-            status: 'ok',
-            msg: "Invoice processed successfully",
-            rawOCR: ocrText,
-            structured: structuredInvoice,
-            customerMatch,
-        }, 200);
+            // Step 3: Match extracted customer name against existing customers
+            console.log('Matching customer by name:', structuredInvoice.customerName);
+            const customerMatch = await matchCustomerByName(structuredInvoice.customerName);
+            console.log('Customer match result:', JSON.stringify(customerMatch, null, 2));
+
+            const finalResult = {
+                status: 'ok',
+                msg: "Invoice processed successfully",
+                rawOCR: ocrText,
+                structured: structuredInvoice,
+                customerMatch,
+            };
+            console.log('Sending final result to client:', JSON.stringify(finalResult, null, 2));
+            return c.json(finalResult, 200);
+        } catch (llmErr) {
+            const llmErrorMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
+            console.error('LLM/customer processing error:', llmErrorMsg);
+            console.error('Full error:', JSON.stringify(llmErr, null, 2));
+
+            // Check for rate limiting
+            if (llmErrorMsg.includes('429') || llmErrorMsg.includes('Too Many Requests')) {
+                return c.json({
+                    status: 'error',
+                    msg: "LLM provider rate limited - please try again later",
+                    error: llmErrorMsg,
+                }, 429);
+            }
+
+            // Check for auth/key issues
+            if (llmErrorMsg.includes('401') || llmErrorMsg.includes('403') || llmErrorMsg.includes('API key')) {
+                return c.json({
+                    status: 'error',
+                    msg: "LLM provider authentication failed - check API key",
+                    error: llmErrorMsg,
+                }, 401);
+            }
+
+            return c.json({
+                status: 'error',
+                msg: "Failed to process invoice with LLM",
+                error: llmErrorMsg,
+            }, 500);
+        }
 
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';

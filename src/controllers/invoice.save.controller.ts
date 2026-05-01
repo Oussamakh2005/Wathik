@@ -62,7 +62,12 @@ export const saveInvoice = async (c: Context) => {
 
         const calculatedTotal = body.total ?? body.items.reduce((sum, item) => sum + item.price * item.amount, 0);
 
-        const parseDueDate = (dateStr: string): Date => {
+        const parseDueDate = (dateStr: string | undefined): Date => {
+            if (!dateStr) {
+                const defaultDueDate = new Date();
+                defaultDueDate.setDate(defaultDueDate.getDate() + 30);
+                return defaultDueDate;
+            }
             if (dateStr.includes('T')) {
                 return new Date(dateStr);
             }

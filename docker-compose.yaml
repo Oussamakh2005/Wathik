@@ -11,8 +11,8 @@ services:
       PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
       DATABASE_URL: ${DATABASE_URL}
       OCR_API_KEY: ${OCR_API_KEY}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-z-ai/glm-4.5-air:free}
+      GROQ_API_KEY: ${OPENROUTER_API_KEY}
+      GROQ_MODEL: ${OPENROUTER_MODEL:-z-ai/glm-4.5-air:free}
       OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
       OPENROUTER_TIMEOUT_MS: ${OPENROUTER_TIMEOUT_MS:-60000}
     healthcheck:

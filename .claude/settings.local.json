@@ -21,7 +21,17 @@
       "Bash(bun --bun run prisma generate)",
       "Bash(python -c ' *)",
       "Bash(PORT=3099 PUBLIC_API_URL=http://localhost:3099 bun run src/index.ts)",
-      "Bash(docker version *)"
+      "Bash(docker version *)",
+      "Bash(pkill *)",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs -r kill -9)",
+      "Bash(bun src/tests/advisor.integration.test.ts)",
+      "Bash(cd /d D:\\\\projects\\\\Wathik)",
+      "Bash(npm list *)",
+      "Bash(cd D:\\\\\\\\projects\\\\\\\\Wathik)",
+      "WebFetch(domain:ocr.space)",
+      "PowerShell(netstat *)",
+      "PowerShell(taskkill *)"
     ]
   }
 }

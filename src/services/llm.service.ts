@@ -450,3 +450,28 @@ export function createOpenRouterService(): LLMService {
     timeoutMs: safeTimeoutMs,
   });
 }
+
+/**
+ * Create LLM service with Groq (OpenAI-compatible API)
+ * Default model: llama-3.3-70b-versatile
+ */
+export function createGroqService(): LLMService {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error('GROQ_API_KEY environment variable is required');
+  }
+
+  const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+  const baseUrl = 'https://api.groq.com/openai/v1';
+  const timeoutMsRaw = process.env.GROQ_TIMEOUT_MS;
+  const timeoutMs = timeoutMsRaw ? Number(timeoutMsRaw) : undefined;
+  const safeTimeoutMs = Number.isFinite(timeoutMs) ? timeoutMs : undefined;
+
+  return new LLMService({
+    apiKey,
+    model,
+    provider: 'openrouter',
+    baseUrl,
+    timeoutMs: safeTimeoutMs,
+  });
+}

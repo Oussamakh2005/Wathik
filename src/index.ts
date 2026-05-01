@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import { ocrRouter, crudRouter } from './routers/invoice.router';
 import customerRouter from './routers/customer.router';
 import financialsRouter from './routers/financials.router';
+import { advisorRouter } from './routers/advisor.router';
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_API_URL = process.env.PUBLIC_API_URL || `http://localhost:${PORT}`;
@@ -16,6 +17,7 @@ app.route('/', ocrRouter);
 app.route('/', crudRouter);
 app.route('/', customerRouter);
 app.route('/', financialsRouter);
+app.route('/', advisorRouter);
 
 app.doc('/openapi.json', {
   openapi: '3.0.0',
