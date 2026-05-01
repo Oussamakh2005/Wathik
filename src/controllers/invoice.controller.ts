@@ -69,27 +69,39 @@ export const getInvoiceImage = async (c: Context) => {
             return c.json(ocrOnlyResult, 200);
         }
 
-        // Step 2: LLM - Structure OCR text into invoice data
-        console.log('LLM request started');
-        const llmStart = Date.now();
-        const llmService = createOpenRouterService();
-        const structuredInvoice = await llmService.structureInvoiceText(ocrText);
-        console.log(`LLM response received in ${Date.now() - llmStart}ms`);
-        console.log('Structured invoice:', JSON.stringify(structuredInvoice, null, 2));
+        try {
+            // Step 2: LLM - Structure OCR text into invoice data
+            console.log('LLM request started');
+            const llmStart = Date.now();
+            const llmService = createOpenRouterService();
+            const structuredInvoice = await llmService.structureInvoiceText(ocrText);
+            console.log(`LLM response received in ${Date.now() - llmStart}ms`);
+            console.log('Structured invoice:', JSON.stringify(structuredInvoice, null, 2));
 
-        // Step 3: Match extracted customer name against existing customers
-        const customerMatch = await matchCustomerByName(structuredInvoice.customerName);
-        console.log('Customer match result:', JSON.stringify(customerMatch, null, 2));
+            // Step 3: Match extracted customer name against existing customers
+            console.log('Matching customer by name:', structuredInvoice.customerName);
+            const customerMatch = await matchCustomerByName(structuredInvoice.customerName);
+            console.log('Customer match result:', JSON.stringify(customerMatch, null, 2));
 
-        const finalResult = {
-            status: 'ok',
-            msg: "Invoice processed successfully",
-            rawOCR: ocrText,
-            structured: structuredInvoice,
-            customerMatch,
-        };
-        console.log('Sending final result to client:', JSON.stringify(finalResult, null, 2));
-        return c.json(finalResult, 200);
+            const finalResult = {
+                status: 'ok',
+                msg: "Invoice processed successfully",
+                rawOCR: ocrText,
+                structured: structuredInvoice,
+                customerMatch,
+            };
+            console.log('Sending final result to client:', JSON.stringify(finalResult, null, 2));
+            return c.json(finalResult, 200);
+        } catch (llmErr) {
+            const llmErrorMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
+            console.error('LLM/customer processing error:', llmErrorMsg);
+            console.error('Full error:', llmErr);
+            return c.json({
+                status: 'error',
+                msg: "Failed to process invoice with LLM",
+                error: llmErrorMsg,
+            }, 500);
+        }
 
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
