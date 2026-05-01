@@ -28,7 +28,8 @@
       "Bash(bun src/tests/advisor.integration.test.ts)",
       "Bash(cd /d D:\\\\projects\\\\Wathik)",
       "Bash(npm list *)",
-      "Bash(cd D:\\\\\\\\projects\\\\\\\\Wathik)"
+      "Bash(cd D:\\\\\\\\projects\\\\\\\\Wathik)",
+      "WebFetch(domain:ocr.space)"
     ]
   }
 }
